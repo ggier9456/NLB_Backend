@@ -52,8 +52,8 @@ public class FTRService {
     @Value("${huggingface.api-key}")
     private String API_TOKEN;
     private static final String API_URL = "https://router.huggingface.co/v1/chat/completions";
-    private static final String NEWS_URL = "http://localhost:8081/makefulltextfeed.php?url=https://techcrunch.com/tag/Google/feed/&format=json";
-//    private static final String NEWS_URL = "http://localhost:8081/makefulltextfeed.php?url=https://techcrunch.com/feed/&format=json";
+//    private static final String NEWS_URL = "http://localhost:8081/makefulltextfeed.php?url=https://techcrunch.com/tag/AI/feed/&format=json";
+    private static final String NEWS_URL = "http://localhost:8081/makefulltextfeed.php?url=https://techcrunch.com/feed/&format=json";
 
     private final RestTemplate restTemplate;
 
@@ -72,21 +72,21 @@ public class FTRService {
 
         int i = 0;
         for(Map<String, Object> item : items) {
-            if(i > 1) break;
+            if(i > 10) break;
             List<String> categories = (List<String>) item.get("category");
             System.out.println("第" +(i+1) + "篇新聞");
             System.out.println("title: " + item.get("title"));
             System.out.println("guID: " + (String)item.get("guid"));
             System.out.println("description: " );
-            String text = parseHtml((String) item.get("description"));
-            String summary = huggingFaceSummarizer(text);
-            System.out.println("summary: " + summary);
+//            System.out.println("summary: " + summary);
             System.out.println("pubDate: " + parseDate((String) item.get("pubDate")));
             System.out.println("category: " + item.get("category"));
 
             //新增新聞資料
             Integer guid = parseNewsGUID((String)item.get("guid"));
             if(newsDAO.findByGuid(guid) != null) {continue;}
+            String text = parseHtml((String) item.get("description"));
+            String summary = huggingFaceSummarizer(text);
             News news = new News();
             news.setTitle((String)item.get("title"));
             news.setGuid(guid);
@@ -150,7 +150,23 @@ public class FTRService {
         // messages 內容
         Map<String, String> message = new HashMap<>();
         message.put("role", "user");
-        String prompt = "說明一下這篇新聞在說什麼 請用繁體中文 並且將你認為的重點條列式說明(大概5點就好): " + news;
+        String prompt = """
+                你是一位專業的新聞分析編輯。\s
+                                \s
+                請閱讀以下「英文新聞全文」，並用「繁體中文」輸出一篇【結構化解析摘要】，格式請嚴格依照下列規則：\s
+                \s
+                【輸出規則】\s
+                	1. 開頭先用 1 句話說明「這篇新聞主要在談什麼」。\s
+                	2. 接著列出 4–6 點「重點整理」，使用編號（1. 2. 3. …）。\s
+                	3. 每一個重點必須：\s
+                	   - 先用一句話說明該重點的核心\s
+                	   - 再用 1–2 行補充背景、原因或影響（以「- 」開頭）\s
+                	4. 最後請加上一段「結語」，說明整體意義、趨勢或可能影響。\s
+                	5. 不要使用 Markdown 粗體符號（**），請輸出為純文字。\s
+                	6. 請保持語氣中立、清楚、像新聞解析稿。\s
+                \s
+                【英文新聞全文】 : %d
+                """.formatted(news);
         message.put("content", prompt);
 
         List<Map<String, String>> messages = new ArrayList<>();
@@ -158,7 +174,7 @@ public class FTRService {
 
         // 參數
         Map<String, Object> body = new HashMap<>();
-        body.put("model", "Qwen/Qwen3-4B-Instruct-2507:nscale");
+        body.put("model", "openai/gpt-oss-120b:groq");
         body.put("messages", messages);
         body.put("stream", false);
         HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
