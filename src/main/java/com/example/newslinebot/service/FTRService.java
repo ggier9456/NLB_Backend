@@ -29,6 +29,7 @@ import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.ZoneId;
+import java.time.Year;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.DateTimeParseException;
 
@@ -72,7 +73,7 @@ public class FTRService {
 
         int i = 0;
         for(Map<String, Object> item : items) {
-            if(i > 10) break;
+            if(i > 5) break;
             List<String> categories = (List<String>) item.get("category");
             System.out.println("第" +(i+1) + "篇新聞");
             System.out.println("title: " + item.get("title"));
@@ -83,7 +84,7 @@ public class FTRService {
             System.out.println("category: " + item.get("category"));
 
             //新增新聞資料
-            Integer guid = parseNewsGUID((String)item.get("guid"));
+            String guid = parseNewsGUID((String)item.get("guid"));
             if(newsDAO.findByGuid(guid) != null) {continue;}
             String text = parseHtml((String) item.get("description"));
             String summary = huggingFaceSummarizer(text);
@@ -142,6 +143,9 @@ public class FTRService {
     }
 
     public String huggingFaceSummarizer(String news){
+
+        int currentYear = Year.now().getValue();
+
         HttpHeaders headers = new HttpHeaders();
         headers.setBearerAuth(API_TOKEN);
         headers.setContentType(MediaType.APPLICATION_JSON);
@@ -151,7 +155,7 @@ public class FTRService {
         Map<String, String> message = new HashMap<>();
         message.put("role", "user");
         String prompt = """
-                你是一位專業的新聞分析編輯。\s
+                你是一位專業的新聞分析編輯。 現在是 %d 年\s
                                 \s
                 請閱讀以下「英文新聞全文」，並用「繁體中文」輸出一篇【結構化解析摘要】，格式請嚴格依照下列規則：\s
                 \s
@@ -164,9 +168,11 @@ public class FTRService {
                 	4. 最後請加上一段「結語」，說明整體意義、趨勢或可能影響。\s
                 	5. 不要使用 Markdown 粗體符號（**），請輸出為純文字。\s
                 	6. 請保持語氣中立、清楚、像新聞解析稿。\s
+                	7. 請說明這篇新聞對於我會有什麼影響(對我們的影響)。\s
                 \s
-                【英文新聞全文】 : %d
-                """.formatted(news);
+                【英文新聞全文】 : %s
+                """.formatted(currentYear, news);
+        System.out.println(prompt);
         message.put("content", prompt);
 
         List<Map<String, String>> messages = new ArrayList<>();
@@ -196,11 +202,11 @@ public class FTRService {
         return "摘要生成失敗";
     }
 
-    public Integer parseNewsGUID(String url){
+    public String parseNewsGUID(String url){
         Pattern pattern = Pattern.compile("[?&]p=(\\d+)");
         Matcher matcher = pattern.matcher(url);
         if (matcher.find()) {
-            return Integer.parseInt(matcher.group(1));
+            return matcher.group(1);
         }
         return null;
     }

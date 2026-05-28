@@ -4,7 +4,7 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
-@Component   // ❗ 必須加 @Component 才會被 Spring 掃描
+@Component
 public class DatabaseCheckRunner implements CommandLineRunner {
 
     private final JdbcTemplate jdbcTemplate;

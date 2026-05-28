@@ -4,6 +4,6 @@ import lombok.Data;
 
 @Data
 public class NewsToCategory {
-    private Integer newsId;
+    private String newsId;
     private Integer cId;
 }

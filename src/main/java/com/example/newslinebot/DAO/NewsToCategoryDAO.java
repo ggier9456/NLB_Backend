@@ -16,7 +16,7 @@ public class NewsToCategoryDAO {
     }
 
 
-    public int insert(Integer news_id, Integer c_id) {
+    public int insert(String news_id, Integer c_id) {
         String sql = """
                 INSERT INTO news_to_category (
                     news_id,
@@ -26,7 +26,7 @@ public class NewsToCategoryDAO {
         return jdbcTemplate.update(sql, news_id, c_id);
     }
 
-    public NewsToCategory findByNewsIdAndCategoryId(Integer news_id, Integer c_id) {
+    public NewsToCategory findByNewsIdAndCategoryId(String news_id, Integer c_id) {
         String sql = """
                 SELECT
                     *

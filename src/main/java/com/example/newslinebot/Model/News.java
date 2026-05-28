@@ -6,7 +6,7 @@ import java.time.LocalDateTime;
 
 @Data
 public class News {
-    private Integer guid;
+    private String guid;
     private String newsUrl;
     private String title;
     private String summary;

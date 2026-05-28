@@ -46,7 +46,7 @@ public class NewsDAO {
     /**
      * 依 guid 查詢單筆
      */
-    public News findByGuid(Integer guid) {
+    public News findByGuid(String guid) {
         String sql = "SELECT * FROM news WHERE guid = ?";
         List<News> list = jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(News.class), guid);
         return list.isEmpty() ? null : list.get(0);
